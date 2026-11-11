@@ -17,6 +17,14 @@ It has two modes:
 4. Illustrations are kinetic graphics built from the script's own content (big numbers, line charts, receipts, comparison tables, statements). Some scenes use real Pixabay footage instead: Opus picks the search terms, then looks at the candidate thumbnails and only inserts one that matches.
 5. Word-by-word subtitles synced to the voice, transitions and synthesized sound effects are added, and everything is muxed into one MP4.
 
+## Before you start
+
+- **You need your own API accounts.** Claude and Higgsfield are paid; Vbee is paid for voiceover; Pixabay is free. Demo mode runs the whole pipeline with no keys and no cost, so you can try the app first.
+- **ffmpeg is a separate install.** `pip` does not install it.
+- **Built and tested on Windows.** It runs elsewhere, but on macOS/Linux the graphics fall back to Pillow's default font unless you point `_FONT_DIRS` in `text_effects.py` at a font with Vietnamese glyphs.
+- **Presenter mode uploads your portrait to a public file host.** Higgsfield needs a public image URL, so in real (non-demo) runs the photo is uploaded to catbox.moe (public, not auto-deleted) or tmpfiles.org as a fallback. Don't use a photo you wouldn't publish.
+- **Higgsfield models depend on your account.** If a model in the dropdown is not available to you, pick another or set `HF_VIDEO_MODEL`.
+
 ## Setup
 
 Requires Python 3.10+ and `ffmpeg`/`ffprobe` on your PATH (on Windows, `C:\ffmpeg\` or `C:\ffmpeg\bin\` also works).

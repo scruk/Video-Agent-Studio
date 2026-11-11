@@ -65,6 +65,13 @@ def test_long_speaker_run_is_split_at_beat_boundary():
     assert all(s["start"] in cut_points for s in shots)  # chỉ cắt ở ranh giới ý
 
 
+def test_presenter_always_appears_at_least_once(monkeypatch):
+    tl, dur = _tl("Xin chào. Mỗi lệnh tốn 0,15% phí và một năm mất 15% vốn.")
+    monkeypatch.setattr(sp, "label_beats", lambda text, bs, key, goal, log: (["visual"] * len(bs), "opus"))
+    shots = sp.plan_shots("x", tl, dur, interval=5, anthropic_key="k")
+    assert shots[0]["type"] == "speaker"
+
+
 def test_short_shot_is_absorbed():
     shots = [{"type": "speaker", "start": 0, "end": 4, "beats": [{"start": 0, "end": 4}]},
              {"type": "visual", "start": 4, "end": 4.9, "beats": [{"start": 4, "end": 4.9}]},

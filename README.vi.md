@@ -17,6 +17,14 @@ Có hai chế độ:
 4. Cảnh minh hoạ: Claude dựng đồ hoạ chữ động từ chính lời thoại (con số lớn, biểu đồ, hoá đơn, bảng so sánh...). Một số cảnh dùng video/ảnh thật từ Pixabay, do Opus chọn từ khoá và xem ảnh thu nhỏ để duyệt.
 5. Phụ đề nhảy từng từ khớp giọng đọc, chuyển cảnh, hiệu ứng âm thanh tự tổng hợp, rồi ghép thành một file MP4.
 
+## Trước khi bắt đầu
+
+- **Cần tài khoản API của riêng bạn.** Claude và Higgsfield trả phí, Vbee trả phí khi lồng tiếng, Pixabay miễn phí. Chế độ chạy thử chạy cả luồng mà không cần key và không tốn tiền, nên có thể thử trước.
+- **ffmpeg phải cài riêng.** `pip` không cài ffmpeg.
+- **Viết và thử trên Windows.** Chạy được ở hệ khác, nhưng trên macOS/Linux đồ hoạ sẽ dùng font mặc định của Pillow, trừ khi bạn trỏ `_FONT_DIRS` trong `text_effects.py` tới một font có dấu tiếng Việt.
+- **Chế độ người dẫn tải ảnh chân dung lên dịch vụ lưu file công khai.** Higgsfield cần link ảnh công khai, nên khi chạy thật (không phải chạy thử) ảnh được tải lên catbox.moe (công khai, không tự xoá) hoặc tmpfiles.org. Đừng dùng ảnh bạn không muốn công khai.
+- **Model Higgsfield tuỳ theo tài khoản.** Model nào trong danh sách tài khoản bạn không dùng được thì chọn model khác hoặc đặt `HF_VIDEO_MODEL`.
+
 ## Cài đặt
 
 Cần Python 3.10+ và `ffmpeg`/`ffprobe` trong PATH (hoặc đặt ở `C:\ffmpeg\` hay `C:\ffmpeg\bin\` trên Windows).

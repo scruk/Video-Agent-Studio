@@ -234,6 +234,10 @@ def plan_shots(speech_text: str, timeline: list[dict], total_dur: float, interva
                         "why": "; ".join(b.get("why", "") for b in p["beats"] if b.get("why"))[:120],
                         "split": n > 0})
     out[0]["start"], out[-1]["end"] = 0.0, round(total_dur, 3)
+    # Video người dẫn mà không thấy mặt người dẫn lần nào: cảnh đầu thuộc về người dẫn
+    if not any(s["type"] == "speaker" for s in out):
+        out[0]["type"] = "speaker"
+        out[0]["why"] = "mở đầu bằng người dẫn"
     vis = sum(s["end"] - s["start"] for s in out if s["type"] == "visual")
     log(f"🎬 [{'Opus' if src == 'opus' else 'Quy tắc'}] {len(beats)} ý → {len(out)} shot | "
         f"minh hoạ {vis / total_dur * 100:.0f}% thời lượng")

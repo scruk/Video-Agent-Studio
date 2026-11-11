@@ -25,8 +25,8 @@ from voice_client import DEFAULT_VOICE_CODE, VbeeVoiceClient, mux_voice_into_vid
 
 BRAIN_MODEL = os.getenv("BRAIN_MODEL", "claude-opus-5-5")
 WORKER_MODELS = {
-    "haiku": os.getenv("HAIKU_MODEL", "claude-opus-5-5"),
-    "sonnet": os.getenv("SONNET_MODEL", "claude-opus-5-5"),
+    "haiku": os.getenv("HAIKU_MODEL", "claude-haiku-5-5"),
+    "sonnet": os.getenv("SONNET_MODEL", "claude-sonnet-5-5"),
     "opus": os.getenv("BRAIN_MODEL", "claude-opus-5-5"),
 }
 HF_VIDEO_MODEL = os.getenv("HF_VIDEO_MODEL", "higgsfield/cinema-studio/4.0")
