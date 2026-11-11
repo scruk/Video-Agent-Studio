@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Agent Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['"Be Vietnam Pro"', 'system-ui', 'sans-serif'], mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'] } } }
+    }
+  </script>
+  <style>
+    /* ===================== TOKENS ===================== */
+    :root {
+      --bg: #F5F4EE;
+      --surface: #FFFFFF;
+      --surface-2: #FAF9F5;
+      --sunk: #EEECE4;
+      --line: #E6E3D9;
+      --line-strong: #D3CFC2;
+      --ink: #17201B;
+      --ink-2: #46514A;
+      --ink-3: #66706A;
+
+      --primary: #0E8A45;
+      --primary-hover: #0B773B;
+      --primary-soft: #E5F4EB;
+      --primary-line: #B9E1C8;
+      --primary-ink: #0A5F30;
+
+      --sun: #FFD43B;
+      --sun-soft: #FFF5CF;
+      --sun-ink: #6E5200;
+      --coral: #E5533A;
+      --coral-soft: #FDECE7;
+      --coral-ink: #A3301B;
+      --sky-soft: #E8F0FC;
+      --sky-ink: #1D56A8;
+
+      --shadow-card: 0 1px 2px rgba(23, 32, 27, .04), 0 10px 28px -16px rgba(23, 32, 27, .14);
+      --shadow-pop: 0 2px 6px rgba(23, 32, 27, .06), 0 24px 60px -20px rgba(23, 32, 27, .28);
+
+      /* Chuyển động (Animate UI tokens, bản CSS) */
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);        /* vào / ra */
+      --ease-soft: cubic-bezier(0.215, 0.61, 0.355, 1);  /* mở ra, phủ nền, hộp thoại */
+      --ease-inout: cubic-bezier(0.77, 0, 0.175, 1);     /* di chuyển trên màn hình */
+      --ease-away: cubic-bezier(0.33, 0.17, 0.67, 0.5);  /* đóng hộp thoại */
+      --ease-enter: cubic-bezier(0.25, 0.1, 0.35, 1);    /* nội dung tab mới hiện */
+      --ease-color: cubic-bezier(0.25, 0.1, 0.25, 1);    /* đổi màu */
+      --ease-thumb: cubic-bezier(0.34, 1.36, 0.64, 1);   /* nút gạt, vượt nhẹ ~4% */
+      --t-press: 120ms;
+      --t-color: 200ms;
+      --t-menu: 220ms;
+      --t-panel: 300ms;
+      --t-disclosure: 350ms;
+      --t-dialog: 400ms;
+      --t-dismiss: 200ms;
+    }
+
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      background:
+        radial-gradient(1100px 420px at 12% -120px, rgba(14, 138, 69, .10), transparent 70%),
+        radial-gradient(900px 380px at 95% -160px, rgba(255, 212, 59, .22), transparent 70%),
+        var(--bg);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    ::selection { background: var(--sun); color: var(--ink); }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; border: 3px solid transparent; background-clip: content-box; }
+    ::-webkit-scrollbar-track { background: transparent; }
+
+    :focus-visible { outline: 3px solid rgba(14, 138, 69, .35); outline-offset: 2px; border-radius: 10px; }
+
+    /* ===================== SURFACES ===================== */
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow-card); }
+    .sunk { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; }
+    .section-title { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+
+    /* ===================== TYPE ===================== */
+    .lbl { display: block; font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
+    .help { font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+    .kbd { font-family: "JetBrains Mono", monospace; font-size: 11px; padding: 1px 6px; border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 6px; background: var(--surface); color: var(--ink-2); }
+
+    /* ===================== FIELDS ===================== */
+    .field {
+      width: 100%; background: var(--surface); color: var(--ink);
+      border: 1px solid var(--line-strong); border-radius: 12px;
+      padding: 9px 12px; font-size: 14px; line-height: 1.45;
+      transition: border-color var(--t-color) var(--ease-color), box-shadow var(--t-color) var(--ease-color);
+    }
+    .field::placeholder { color: #98A09A; }
+    .field:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(14, 138, 69, .14); }
+    select.field { appearance: none; padding-right: 36px; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2346514A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center; }
+    textarea.field { resize: vertical; }
+    input[type=range] { accent-color: var(--primary); }
+
+    /* ===================== BUTTONS ===================== */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 40px; padding: 0 16px; border-radius: 12px;
+      font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; user-select: none;
+      border: 1px solid transparent; touch-action: manipulation;
+      transition: background-color var(--t-color) var(--ease-color), border-color var(--t-color) var(--ease-color),
+                  color var(--t-color) var(--ease-color), box-shadow var(--t-color) var(--ease-color),
+                  transform var(--t-press) var(--ease-out);
+    }
+    .btn:active:not(:disabled) { transform: scale(.97); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 6px 16px -8px rgba(14, 138, 69, .7); }
+    .btn-ghost { background: var(--surface); color: var(--ink-2); border-color: var(--line-strong); }
+    .btn-soft { background: var(--primary-soft); color: var(--primary-ink); border-color: var(--primary-line); }
+    .btn-sun { background: var(--sun); color: #3D2E00; }
+    .btn-danger-quiet { background: transparent; color: var(--coral-ink); }
+    .btn-icon { min-height: 36px; width: 36px; padding: 0; border-radius: 10px; }
+    .btn-lg { min-height: 52px; font-size: 15px; border-radius: 14px; }
+
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px;
+      border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface);
+      font-size: 13px; font-weight: 500; color: var(--ink-2); cursor: pointer;
+      transition: background-color var(--t-color) var(--ease-color), border-color var(--t-color) var(--ease-color), color var(--t-color) var(--ease-color), transform var(--t-press) var(--ease-out);
+    }
+    .chip:active { transform: scale(.97); }
+
+    @media (hover: hover) and (pointer: fine) {
+      .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+      .btn-ghost:hover:not(:disabled) { background: var(--surface-2); border-color: var(--ink-3); color: var(--ink); }
+      .btn-soft:hover:not(:disabled) { background: #D7EEE0; }
+      .btn-sun:hover:not(:disabled) { background: #FFCB0F; }
+      .btn-danger-quiet:hover { background: var(--coral-soft); }
+      .chip:hover { border-color: var(--primary-line); background: var(--primary-soft); color: var(--primary-ink); }
+      .opt:hover { border-color: var(--line-strong); }
+      .vcard:hover { box-shadow: var(--shadow-pop); border-color: var(--line-strong); }
+      .vcard:hover .vthumb img { transform: scale(1.04); }
+      .seg-btn:hover:not([aria-pressed="true"]) { color: var(--ink); }
+      .tab:hover:not([aria-selected="true"]) { color: var(--ink); }
+    }
+
+    /* ===================== BADGES ===================== */
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
+    .b-free { background: var(--primary-soft); color: var(--primary-ink); }
+    .b-cost { background: var(--sun-soft); color: var(--sun-ink); }
+    .b-info { background: var(--sky-soft); color: var(--sky-ink); }
+    .b-warn { background: var(--coral-soft); color: var(--coral-ink); }
+
+    /* ===================== SWITCH ===================== */
+    .sw {
+      appearance: none; -webkit-appearance: none; position: relative; flex-shrink: 0;
+      width: 40px; height: 24px; border-radius: 999px; background: #D6D2C5; cursor: pointer;
+      transition: background-color var(--t-color) var(--ease-color);
+    }
+    .sw::before {
+      content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 999px;
+      background: #fff; box-shadow: 0 1px 3px rgba(23, 32, 27, .25);
+      transition: transform 260ms var(--ease-thumb);
+    }
+    .sw:checked { background: var(--primary); }
+    .sw:checked::before { transform: translateX(16px); }
+    .sw:focus-visible { outline: 3px solid rgba(14, 138, 69, .35); outline-offset: 2px; }
+
+    /* Hàng tuỳ chọn: tiêu đề + mô tả + công tắc */
+    .opt {
+      display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px;
+      background: var(--surface); border: 1px solid var(--line); border-radius: 14px; cursor: pointer;
+      transition: border-color var(--t-color) var(--ease-color), background-color var(--t-color) var(--ease-color);
+    }
+    .opt:has(.sw:checked) { background: #FBFDFB; }
+    .opt-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0; background: var(--sunk); color: var(--ink-2); }
+    .opt-icon svg { width: 18px; height: 18px; }
+    .opt:has(.sw:checked) .opt-icon { background: var(--primary-soft); color: var(--primary); }
+    .opt-title { font-size: 14px; font-weight: 600; color: var(--ink); }
+
+    /* ===================== SEGMENTED + TABS ===================== */
+    .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: var(--sunk); border-radius: 16px; }
+    .seg-btn {
+      display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; border-radius: 12px;
+      color: var(--ink-3); cursor: pointer; border: 1px solid transparent;
+      transition: background-color var(--t-color) var(--ease-color), color var(--t-color) var(--ease-color), box-shadow var(--t-color) var(--ease-color), transform var(--t-press) var(--ease-out);
+    }
+    .seg-btn:active { transform: scale(.97); }
+    .seg-btn[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(23, 32, 27, .06), 0 4px 12px -6px rgba(23, 32, 27, .18); border-color: var(--line); }
+    .seg-btn .seg-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: transparent; flex-shrink: 0; transition: background-color var(--t-color) var(--ease-color), color var(--t-color) var(--ease-color); }
+    .seg-btn[aria-pressed="true"] .seg-ic { background: var(--primary-soft); color: var(--primary); }
+    @media (max-width: 480px) { .seg-btn .seg-ic { display: none; } .seg-btn { padding: 10px; } .status { padding: 0 12px; } }
+
+    .tabs { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; background: var(--sunk); border-radius: 14px; }
+    .tab-ind {
+      position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 3);
+      background: var(--surface); border-radius: 10px; box-shadow: 0 1px 2px rgba(23, 32, 27, .06), 0 4px 12px -6px rgba(23, 32, 27, .2);
+      transition: transform var(--t-panel) var(--ease-inout);
+    }
+    .tab {
+      position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 40px; padding: 0 10px; border-radius: 10px; font-size: 13.5px; font-weight: 600; color: var(--ink-3); cursor: pointer;
+      transition: color var(--t-color) var(--ease-color);
+    }
+    .tab[aria-selected="true"] { color: var(--ink); }
+    .tab svg { width: 16px; height: 16px; }
+    .tab .count { font-size: 11.5px; padding: 0 7px; border-radius: 999px; background: rgba(23, 32, 27, .07); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+    /* Nội dung tab mới: hiện dần từ mờ nhẹ */
+    @keyframes panelIn { from { opacity: 0; filter: blur(4px); transform: translateY(4px); } to { opacity: 1; filter: blur(0); transform: none; } }
+    .anim-in { animation: panelIn var(--t-panel) var(--ease-enter) both; }
+
+    /* ===================== DISCLOSURE ===================== */
+    .disclosure { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows var(--t-disclosure) var(--ease-soft), opacity var(--t-disclosure) var(--ease-soft); }
+    .disclosure > .disclosure-inner { overflow: hidden; min-height: 0; }
+    /* Khoảng cách nằm trong hộp, nên hộp đóng không để lại khoảng trống */
+    .disclosure { margin-top: 0 !important; }
+    .disclosure[data-open="true"] { grid-template-rows: 1fr; opacity: 1; }
+
+    /* ===================== STATUS PILL ===================== */
+    .status { white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--ink-2); }
+    .status .dot { position: relative; width: 8px; height: 8px; border-radius: 999px; background: var(--primary); }
+    .status[data-state="running"] { background: var(--sun-soft); border-color: #F3DE8A; color: var(--sun-ink); }
+    .status[data-state="running"] .dot { background: #E0A800; }
+    .status[data-state="running"] .dot::after { content: ""; position: absolute; inset: -4px; border-radius: 999px; border: 2px solid #E0A800; animation: ping 1.4s var(--ease-out) infinite; }
+    @keyframes ping { from { transform: scale(.6); opacity: .9; } to { transform: scale(1.6); opacity: 0; } }
+
+    /* ===================== PIPELINE STEPS ===================== */
+    .step { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--ink-3); transition: color var(--t-color) var(--ease-color); }
+    .step .num { width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--sunk); color: var(--ink-3); transition: background-color var(--t-color) var(--ease-color), color var(--t-color) var(--ease-color); }
+    .step[data-state="active"] { color: var(--sun-ink); font-weight: 600; }
+    .step[data-state="active"] .num { background: var(--sun); color: #3D2E00; }
+    .step[data-state="done"] { color: var(--primary-ink); font-weight: 600; }
+    .step[data-state="done"] .num { background: var(--primary); color: #fff; }
+    .step-sep { width: 18px; height: 2px; border-radius: 2px; background: var(--line-strong); }
+
+    /* ===================== LOG ===================== */
+    .log { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12.5px; line-height: 1.65; }
+    @keyframes logIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .log > div { animation: logIn 200ms var(--ease-out) both; white-space: pre-wrap; word-break: break-word; padding: 1px 0; }
+    .log-base { color: var(--ink-2); }
+    .log-empty { color: var(--ink-3); }
+    .log-err { color: #B42318; font-weight: 600; }
+    .log-ok { color: #0A7A3B; font-weight: 600; }
+    .log-step { color: #3341B8; font-weight: 600; }
+    .log-accent { color: #8A5A00; }
+    .log-warn { color: #B45309; }
+
+    /* ===================== VIDEO CARD ===================== */
+    .vcard { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
+      transition: box-shadow var(--t-color) var(--ease-color), border-color var(--t-color) var(--ease-color); }
+    .vthumb { position: relative; flex-shrink: 0; aspect-ratio: 16 / 9; background: #E9E7DF; overflow: hidden; cursor: pointer; transition: transform var(--t-press) var(--ease-out); }
+    .vthumb:active { transform: scale(.985); }
+    .vthumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 400ms var(--ease-out); }
+    .vthumb .play { position: absolute; inset: 0; margin: auto; width: 48px; height: 48px; border-radius: 999px; display: grid; place-items: center; background: rgba(255, 255, 255, .92); color: var(--ink); box-shadow: var(--shadow-card); }
+
+    /* ===================== MODALS ===================== */
+    .modal { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 16px; }
+    .modal[data-state="open"], .modal[data-state="closing"] { display: flex; }
+    .modal-backdrop { position: absolute; inset: 0; background: rgba(23, 32, 27, .45); backdrop-filter: blur(4px); }
+    .modal-panel { position: relative; width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow-pop); overflow: hidden; max-height: calc(100dvh - 32px); display: flex; flex-direction: column; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes dialogIn { from { opacity: 0; transform: perspective(500px) rotateX(-20deg) scale(.8); } to { opacity: 1; transform: none; } }
+    @keyframes dialogOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(.96); } }
+    .modal[data-state="open"] .modal-backdrop { animation: fadeIn var(--t-dialog) var(--ease-soft) both; }
+    .modal[data-state="open"] .modal-panel { animation: dialogIn var(--t-dialog) var(--ease-soft) both; }
+    .modal[data-state="closing"] .modal-backdrop { animation: fadeOut var(--t-dismiss) var(--ease-away) both; }
+    .modal[data-state="closing"] .modal-panel { animation: dialogOut var(--t-dismiss) var(--ease-away) both; }
+
+    /* Banner duyệt chi phí */
+    @keyframes bannerIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+    #approvalBanner:not(.hidden) { animation: bannerIn var(--t-panel) var(--ease-out) both; }
+
+    /* Nút Tạo video: trạng thái đang chạy */
+    #startBtn .busy { display: none; }
+    #startBtn[data-busy="true"] .idle { display: none; }
+    #startBtn[data-busy="true"] .busy { display: inline-flex; align-items: center; gap: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 900ms linear infinite; }
+
+    /* ===================== REDUCED MOTION: giữ mờ dần, bỏ chuyển động ===================== */
+    @media (prefers-reduced-motion: reduce) {
+      @keyframes panelIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes logIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes dialogIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes dialogOut { from { opacity: 1; } to { opacity: 0; } }
+      @keyframes bannerIn { from { opacity: 0; } to { opacity: 1; } }
+      .btn:active:not(:disabled), .chip:active, .seg-btn:active, .vthumb:active { transform: none; }
+      .tab-ind, .sw::before, .vthumb img { transition: none; }
+      .disclosure { transition: opacity var(--t-disclosure) var(--ease-soft); }
+      .status[data-state="running"] .dot::after, .spin { animation: none; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased">
+
+  <a href="#createForm" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[70] btn btn-ghost">Tới form tạo video</a>
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="sticky top-0 z-40 border-b border-[var(--line)] bg-[rgba(255,255,255,.78)] backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-[var(--primary)] text-white grid place-items-center shadow-[0_6px_16px_-8px_rgba(14,138,69,.8)] shrink-0">
+          <i data-lucide="clapperboard" class="w-5 h-5"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-[17px] font-bold leading-tight tracking-tight truncate">Video Agent<span class="hidden sm:inline"> Studio</span></h1>
+          <p class="hidden sm:block text-[12.5px] text-[var(--ink-3)] truncate">Opus 5.5 viết và dựng · Higgsfield quay · Vbee đọc</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <div id="statusBadge" class="status" data-state="idle" role="status" aria-live="polite">
+          <span class="dot"></span><span id="statusText" class="sr-only sm:not-sr-only">Sẵn sàng</span>
+        </div>
+        <button type="button" onclick="openEnvModal()" class="btn btn-ghost" aria-label="Cấu hình API keys">
+          <i data-lucide="key-round"></i><span class="hidden sm:inline">API keys</span>
+        </button>
+        <button type="button" onclick="switchTab('gallery')" class="btn btn-soft" aria-label="Mở thư viện video">
+          <i data-lucide="library"></i><span class="hidden sm:inline">Thư viện</span>
+          <span id="videoCountBadge" class="badge bg-white/80 text-[var(--primary-ink)] tabular-nums">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== BANNER DUYỆT CHI PHÍ ===================== -->
+  <div id="approvalBanner" class="hidden border-b border-[#F3DE8A] bg-[var(--sun-soft)]" role="alertdialog" aria-labelledby="approvalTitle">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-start gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-[var(--sun)] text-[#3D2E00] grid place-items-center shrink-0">
+          <i data-lucide="coins" class="w-5 h-5"></i>
+        </div>
+        <div class="min-w-0">
+          <h2 id="approvalTitle" class="font-semibold text-[15px] text-[var(--sun-ink)]">Agent xin duyệt chi phí render</h2>
+          <pre id="approvalPromptText" class="mt-1.5 text-[13px] text-[var(--ink-2)] whitespace-pre-wrap font-sans bg-white/70 border border-[#F3DE8A] rounded-xl p-3"></pre>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button type="button" onclick="sendApproval('n')" class="btn btn-ghost">Không, sửa lại</button>
+        <button type="button" onclick="sendApproval('y')" class="btn btn-primary"><i data-lucide="check"></i>Duyệt và render</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MAIN ===================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- ========== CỘT TRÁI: FORM ========== -->
+    <div class="lg:col-span-5 space-y-5">
+      <section class="card p-5 sm:p-6" aria-labelledby="createTitle">
+        <h2 id="createTitle" class="text-[19px] font-bold tracking-tight">Tạo video mới</h2>
+        <p class="help mt-1">Mô tả ý tưởng hoặc dán sẵn lời thoại. Agent lo phần còn lại.</p>
+
+        <form id="createForm" onsubmit="handleStartRun(event)" class="mt-5 space-y-6">
+
+          <!-- Chế độ -->
+          <div class="seg" role="group" aria-label="Chế độ sản xuất">
+            <button type="button" onclick="setProductionMode('cinema')" id="modeBtn-cinema" class="seg-btn" aria-pressed="true">
+              <span class="seg-ic"><i data-lucide="clapperboard" class="w-[18px] h-[18px]"></i></span>
+              <span class="min-w-0">
+                <span class="block text-[14px] font-semibold">Phim phân cảnh</span>
+                <span class="block text-[12px] text-[var(--ink-3)]">Mỗi shot quay bằng AI</span>
+              </span>
+            </button>
+            <button type="button" onclick="setProductionMode('avatar')" id="modeBtn-avatar" class="seg-btn" aria-pressed="false">
+              <span class="seg-ic"><i data-lucide="presentation" class="w-[18px] h-[18px]"></i></span>
+              <span class="min-w-0">
+                <span class="block text-[14px] font-semibold">Người dẫn nói</span>
+                <span class="block text-[12px] text-[var(--ink-3)]">Chỉ 1 clip AI, rẻ hơn</span>
+              </span>
+            </button>
+          </div>
+
+          <!-- Kịch bản -->
+          <div>
+            <label id="promptLabel" for="promptInput" class="lbl">Ý tưởng hoặc kịch bản</label>
+            <textarea id="promptInput" rows="5" required class="field"
+              placeholder="Ví dụ: Video quảng cáo 15 giây cho trà thảo mộc Quiet Evening, mở đầu cảnh bàn trà chiều mưa, kết bằng logo..."></textarea>
+            <div id="quickPromptContainer" class="flex flex-wrap items-center gap-2 mt-2.5"></div>
+          </div>
+
+          <!-- Tuỳ chọn chế độ người dẫn -->
+          <div id="avatarSettingsBox" class="disclosure" data-open="false" inert>
+            <div class="disclosure-inner">
+              <div class="space-y-5 pt-6">
+
+                <div class="space-y-2.5">
+                  <h3 class="section-title">Cảnh người nói</h3>
+                  <label class="opt">
+                    <span class="opt-icon"><i data-lucide="wand-sparkles"></i></span>
+                    <span class="flex-1 min-w-0">
+                      <span class="flex flex-wrap items-center gap-2">
+                        <span class="opt-title">Cho nhân vật cử động bằng AI</span>
+                        <span id="motionPriceBadge" class="badge b-cost">Kling ~$0.25</span>
+                      </span>
+                      <span class="help block mt-0.5">Tạo một clip 5 giây từ ảnh chân dung rồi dùng lại cho cả video. Tắt đi thì ảnh chỉ zoom chậm, không mất phí.</span>
+                    </span>
+                    <input type="checkbox" id="avatarAiMotionCheck" class="sw mt-1" checked>
+                  </label>
+                  <div class="pl-1">
+                    <label for="avatarAiModelSelect" class="lbl">Mô hình tạo clip</label>
+                    <select id="avatarAiModelSelect" onchange="onAvatarModelChange()" class="field">
+                      <option value="kling-video/v3.0-turbo/image-to-video" selected>Kling 3.0 Turbo · ~$0.25</option>
+                      <option value="bytedance/seedance-2.5/image-to-video">Seedance 2.5 · cử động mềm hơn · ~$0.30</option>
+                      <option value="higgsfield/cinema-studio/4.0">Higgsfield Cinema Studio 4.0 · ~$2.31</option>
+                    </select>
+                  </div>
+                  <label class="opt">
+                    <span class="opt-icon"><i data-lucide="layout-template"></i></span>
+                    <span class="flex-1 min-w-0">
+                      <span class="opt-title">Thẻ tóm ý trên cảnh người nói</span>
+                      <span class="help block mt-0.5">Icon và một câu ngắn ở phía trên, phụ đề ở phía dưới.</span>
+                    </span>
+                    <input type="checkbox" id="speakerOverlayCheck" class="sw mt-1" checked>
+                  </label>
+                </div>
+
+                <div class="space-y-2.5">
+                  <h3 class="section-title">Cảnh minh hoạ</h3>
+                  <label class="opt">
+                    <span class="opt-icon"><i data-lucide="scissors"></i></span>
+                    <span class="flex-1 min-w-0">
+                      <span class="opt-title">Cắt cảnh theo nội dung</span>
+                      <span class="help block mt-0.5">Opus đọc kịch bản: đoạn dẫn chuyện để người nói, ý chính chuyển sang minh hoạ. Điểm cắt rơi vào chỗ ngắt hơi.</span>
+                    </span>
+                    <input type="checkbox" id="autoBrollCheck" class="sw mt-1" checked>
+                  </label>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-1">
+                    <div>
+                      <label for="brollIntervalSelect" class="lbl">Nhịp cảnh</label>
+                      <select id="brollIntervalSelect" class="field">
+                        <option value="4.0">Nhanh · khoảng 4 giây</option>
+                        <option value="5.0" selected>Vừa · khoảng 5 giây</option>
+                        <option value="6.0">Chậm · khoảng 6 giây</option>
+                      </select>
+                    </div>
+                    <p class="help sm:self-end sm:pb-2.5">Ảnh đầu tiên bạn tải lên là ảnh người dẫn. Các ảnh sau dùng làm B-roll.</p>
+                  </div>
+                  <label class="opt">
+                    <span class="opt-icon"><i data-lucide="shapes"></i></span>
+                    <span class="flex-1 min-w-0">
+                      <span class="opt-title">Đồ hoạ chữ động</span>
+                      <span class="help block mt-0.5">Claude dựng con số, biểu đồ, bảng so sánh, hoá đơn từ chính lời thoại.</span>
+                    </span>
+                    <input type="checkbox" id="preferTextEffectsCheck" class="sw mt-1" checked>
+                  </label>
+                  <label class="opt">
+                    <span class="opt-icon"><i data-lucide="image"></i></span>
+                    <span class="flex-1 min-w-0">
+                      <span class="flex flex-wrap items-center gap-2">
+                        <span class="opt-title">Xen video và ảnh thật</span>
+                        <span class="badge b-free">Pixabay · miễn phí</span>
+                      </span>
+                      <span class="help block mt-0.5">Opus chọn từ khoá, xem ảnh thu nhỏ rồi mới chèn. Không có hình khớp thì giữ đồ hoạ. Cần PIXABAY_API_KEY.</span>
+                    </span>
+                    <input type="checkbox" id="stockFootageCheck" class="sw mt-1" checked>
+                  </label>
+                </div>
+
+                <div class="space-y-2.5">
+                  <h3 class="section-title">Phụ đề và âm thanh</h3>
+                  <label class="opt">
+                    <span class="opt-icon"><i data-lucide="captions"></i></span>
+                    <span class="flex-1 min-w-0">
+                      <span class="opt-title">Phụ đề nhảy từng từ</span>
+                      <span class="help block mt-0.5">Mỗi lần hiện một từ, khớp nhịp giọng đọc ở mọi tốc độ. Số liệu tô vàng. Tắt để hiện theo cụm câu.</span>
+                    </span>
+                    <input type="checkbox" id="wordSubtitleCheck" class="sw mt-1" checked>
+                  </label>
+                  <label class="opt">
+                    <span class="opt-icon"><i data-lucide="layers"></i></span>
+                    <span class="flex-1 min-w-0">
+                      <span class="opt-title">Chuyển cảnh mượt</span>
+                      <span class="help block mt-0.5">Hai cảnh khác loại hoà vào nhau. Đổi góc máy người nói thì cắt thẳng.</span>
+                    </span>
+                    <input type="checkbox" id="transitionsCheck" class="sw mt-1" checked>
+                  </label>
+                  <div class="opt cursor-default">
+                    <span class="opt-icon"><i data-lucide="audio-lines"></i></span>
+                    <span class="flex-1 min-w-0">
+                      <label for="sfxCheck" class="opt-title cursor-pointer">Hiệu ứng âm thanh</label>
+                      <span class="help block mt-0.5">Tiếng whoosh, pop khớp với chuyển động, tự tổng hợp nên không mất phí.</span>
+                      <span class="flex items-center gap-3 mt-2.5">
+                        <label for="sfxVolumeRange" class="text-[12.5px] text-[var(--ink-3)] shrink-0">Âm lượng</label>
+                        <input type="range" id="sfxVolumeRange" min="0" max="1.5" step="0.05" value="0.5" class="flex-1"
+                          oninput="document.getElementById('sfxVolumeVal').textContent = Math.round(this.value * 100) + '%'">
+                        <span id="sfxVolumeVal" class="text-[12.5px] font-semibold text-[var(--ink-2)] w-11 text-right tabular-nums">50%</span>
+                      </span>
+                    </span>
+                    <input type="checkbox" id="sfxCheck" class="sw mt-1" checked>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Ảnh tham chiếu -->
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <h3 class="section-title">Ảnh tham chiếu <span class="normal-case tracking-normal font-medium">(tuỳ chọn)</span></h3>
+              <span id="refImageCount" class="text-[12.5px] text-[var(--ink-3)] tabular-nums">0 ảnh</span>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input type="file" id="refFileInput" accept="image/jpeg,image/png,image/webp,image/gif" multiple class="hidden" onchange="handleRefFilesSelected(event)">
+              <button type="button" onclick="document.getElementById('refFileInput').click()" class="btn btn-ghost shrink-0">
+                <i data-lucide="upload"></i>Tải ảnh lên
+              </button>
+              <div class="flex flex-1 gap-2 min-w-0">
+                <label for="refUrlInput" class="sr-only">Link ảnh</label>
+                <input type="url" id="refUrlInput" placeholder="hoặc dán link ảnh https://..." class="field min-w-0"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addRefImageUrl();}">
+                <button type="button" onclick="addRefImageUrl()" class="btn btn-ghost btn-icon shrink-0" aria-label="Thêm link ảnh">
+                  <i data-lucide="plus"></i>
+                </button>
+              </div>
+            </div>
+            <div id="refImagesPreview" class="hidden grid grid-cols-4 gap-2"></div>
+            <p class="help">Ảnh sản phẩm, nhân vật hoặc bối cảnh. Có thể dán ảnh bằng <span class="kbd">Ctrl</span> + <span class="kbd">V</span> vào ô kịch bản.</p>
+          </div>
+
+          <!-- Lồng tiếng -->
+          <div class="space-y-2.5">
+            <label class="opt">
+              <span class="opt-icon"><i data-lucide="mic"></i></span>
+              <span class="flex-1 min-w-0">
+                <span class="opt-title">Lồng tiếng tiếng Việt</span>
+                <span class="help block mt-0.5">Vbee đọc lời thoại, giọng được ghép vào video.</span>
+              </span>
+              <input type="checkbox" id="enableVoiceCheck" class="sw mt-1" onchange="toggleVoiceConfig()">
+            </label>
+            <div id="voiceConfigBox" class="disclosure" data-open="false" inert>
+              <div class="disclosure-inner">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2.5 pl-1">
+                  <div class="sm:col-span-2">
+                    <label for="voiceCodeSelect" class="lbl">Giọng đọc</label>
+                    <select id="voiceCodeSelect" class="field">
+                      <option value="hn_female_ngochuyen_full_48k-fhg">Ngọc Huyền · nữ Hà Nội, truyền cảm</option>
+                      <option value="hn_male_manhdung_news_48k-fhg">Mạnh Dũng · nam Hà Nội, quảng cáo</option>
+                      <option value="sg_female_thaotrinh_full_48k-fhg">Thảo Trinh · nữ Sài Gòn, tự nhiên</option>
+                      <option value="sg_male_minhhoang_full_48k-fhg">Minh Hoàng · nam Sài Gòn, trầm ấm</option>
+                      <option value="hn_female_maiphuong_vdts_48k-fhg">Mai Phương · nữ Hà Nội, trong trẻo</option>
+                      <option value="sg_female_tuongvy_call_44k-fhg">Tường Vy · nữ Sài Gòn, nhẹ nhàng</option>
+                      <option value="hue_male_duyphuong_full_48k-fhg">Duy Phương · nam Huế</option>
+                      <option value="hue_female_huonggiang_full_48k-fhg">Hương Giang · nữ Huế</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="voiceSpeedSelect" class="lbl">Tốc độ</label>
+                    <select id="voiceSpeedSelect" class="field">
+                      <option value="0.9">0.9x · chậm</option>
+                      <option value="1.0" selected>1.0x · chuẩn</option>
+                      <option value="1.1">1.1x</option>
+                      <option value="1.2">1.2x</option>
+                      <option value="1.3">1.3x · nhanh</option>
+                      <option value="1.5">1.5x · rất nhanh</option>
+                    </select>
+                  </div>
+                  <div class="sm:col-span-3">
+                    <label for="voiceScriptInput" class="lbl">Lời đọc <span class="font-normal text-[var(--ink-3)]">(để trống thì Opus tự viết)</span></label>
+                    <textarea id="voiceScriptInput" rows="3" class="field" placeholder="Dán lời thoại muốn đọc..."></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Thông số xuất -->
+          <div class="space-y-2.5">
+            <h3 class="section-title">Thông số</h3>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="aspectRatioSelect" class="lbl">Khung hình</label>
+                <select id="aspectRatioSelect" class="field">
+                  <option value="9:16">9:16 · TikTok, Reels</option>
+                  <option value="16:9">16:9 · YouTube</option>
+                  <option value="1:1">1:1 · vuông</option>
+                  <option value="4:3">4:3</option>
+                  <option value="21:9">21:9 · điện ảnh</option>
+                </select>
+              </div>
+              <div>
+                <label for="resSelect" class="lbl">Độ phân giải</label>
+                <select id="resSelect" class="field">
+                  <option value="720p">720p</option>
+                  <option value="480p">480p · rẻ hơn</option>
+                </select>
+              </div>
+              <div>
+                <label for="budgetInput" class="lbl">Ngân sách tối đa</label>
+                <div class="relative">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-3)] text-[14px]">$</span>
+                  <input type="number" id="budgetInput" value="5.0" step="0.5" min="1" max="100" class="field pl-7 tabular-nums">
+                </div>
+              </div>
+              <div>
+                <label for="maxAttemptsInput" class="lbl">Số lần thử mỗi shot</label>
+                <input type="number" id="maxAttemptsInput" value="2" min="1" max="5" class="field tabular-nums">
+              </div>
+            </div>
+          </div>
+
+          <!-- Chạy -->
+          <div class="space-y-2.5">
+            <label class="opt" style="background: var(--sun-soft); border-color: #F3DE8A;">
+              <span class="opt-icon" style="background: var(--sun); color: #3D2E00;"><i data-lucide="flask-conical"></i></span>
+              <span class="flex-1 min-w-0">
+                <span class="opt-title">Chạy thử, không tốn tiền</span>
+                <span class="help block mt-0.5" style="color: var(--sun-ink);">Tạo video mẫu để kiểm tra cả luồng, không gọi API trả phí. Tắt đi khi muốn làm video thật.</span>
+              </span>
+              <input type="checkbox" id="demoModeCheck" class="sw mt-1" checked>
+            </label>
+            <label class="opt">
+              <span class="opt-icon"><i data-lucide="shield-check"></i></span>
+              <span class="flex-1 min-w-0">
+                <span class="opt-title">Tự duyệt chi phí render</span>
+                <span class="help block mt-0.5">Không hỏi lại trước mỗi lượt render. Vẫn dừng khi chạm ngân sách.</span>
+              </span>
+              <input type="checkbox" id="autoApproveCheck" class="sw mt-1">
+            </label>
+          </div>
+
+          <button type="submit" id="startBtn" class="btn btn-primary btn-lg w-full" data-busy="false">
+            <span class="idle inline-flex items-center gap-2"><i data-lucide="play"></i>Tạo video</span>
+            <span class="busy"><i data-lucide="loader-circle" class="spin"></i>Đang tạo video…</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- Quy trình -->
+      <section class="card p-5" aria-labelledby="pipeTitle">
+        <h2 id="pipeTitle" class="section-title flex items-center gap-2"><i data-lucide="workflow" class="w-4 h-4"></i>Agent sẽ làm gì</h2>
+        <ol id="pipeCinema" class="mt-3 space-y-2.5 text-[13.5px] text-[var(--ink-2)]">
+          <li class="flex gap-3"><span class="step-n">1</span><span><b class="text-[var(--ink)]">Opus</b> chia ý tưởng thành danh sách shot và chọn phong cách hình.</span></li>
+          <li class="flex gap-3"><span class="step-n">2</span><span><b class="text-[var(--ink)]">Haiku/Sonnet</b> viết prompt cho từng shot, chạy song song.</span></li>
+          <li class="flex gap-3"><span class="step-n">3</span><span><b class="text-[var(--ink)]">Higgsfield</b> báo giá, chờ bạn duyệt rồi render.</span></li>
+          <li class="flex gap-3"><span class="step-n">4</span><span><b class="text-[var(--ink)]">Opus</b> xem 3 khung hình mỗi shot, chấm điểm, cho làm lại nếu cần.</span></li>
+        </ol>
+        <ol id="pipeAvatar" class="hidden mt-3 space-y-2.5 text-[13.5px] text-[var(--ink-2)]">
+          <li class="flex gap-3"><span class="step-n">1</span><span><b class="text-[var(--ink)]">Opus</b> viết lời thoại (hoặc dùng lời bạn dán).</span></li>
+          <li class="flex gap-3"><span class="step-n">2</span><span><b class="text-[var(--ink)]">Vbee</b> đọc lời, rồi canh thời gian cho từng từ.</span></li>
+          <li class="flex gap-3"><span class="step-n">3</span><span><b class="text-[var(--ink)]">Opus</b> chọn đoạn để người nói, đoạn cho minh hoạ, và soạn đồ hoạ.</span></li>
+          <li class="flex gap-3"><span class="step-n">4</span><span>Ghép người nói, minh hoạ, phụ đề, hiệu ứng âm thanh thành một video.</span></li>
+        </ol>
+        <style>.step-n{width:22px;height:22px;border-radius:999px;display:grid;place-items:center;flex-shrink:0;font-size:12px;font-weight:700;background:var(--sunk);color:var(--ink-2);margin-top:1px}</style>
+      </section>
+    </div>
+
+    <!-- ========== CỘT PHẢI: THEO DÕI ========== -->
+    <div class="lg:col-span-7 flex flex-col gap-4 min-w-0">
+
+      <div class="flex items-center gap-3">
+        <div class="tabs flex-1" role="tablist" aria-label="Khu vực làm việc">
+          <span class="tab-ind" id="tabIndicator" aria-hidden="true"></span>
+          <button type="button" role="tab" id="tabBtn-terminal" aria-selected="true" aria-controls="tab-terminal" class="tab" onclick="switchTab('terminal')">
+            <i data-lucide="scroll-text"></i><span>Tiến trình</span>
+          </button>
+          <button type="button" role="tab" id="tabBtn-gallery" aria-selected="false" aria-controls="tab-gallery" class="tab" onclick="switchTab('gallery')">
+            <i data-lucide="film"></i><span>Video</span><span id="galleryTabCount" class="count">0</span>
+          </button>
+          <button type="button" role="tab" id="tabBtn-voice" aria-selected="false" aria-controls="tab-voice" class="tab" onclick="switchTab('voice')">
+            <i data-lucide="mic"></i><span>Giọng đọc</span><span id="voiceTabCount" class="count">0</span>
+          </button>
+        </div>
+        <button type="button" onclick="clearLogs()" class="btn btn-ghost btn-icon" aria-label="Xoá log" title="Xoá log">
+          <i data-lucide="eraser"></i>
+        </button>
+      </div>
+
+      <!-- TIẾN TRÌNH -->
+      <section id="tab-terminal" role="tabpanel" aria-labelledby="tabBtn-terminal" class="card flex-1 flex flex-col overflow-hidden min-h-[520px]">
+        <div class="px-5 py-3.5 border-b border-[var(--line)] flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2 text-[14px] font-semibold">
+            <i data-lucide="terminal" class="w-4 h-4 text-[var(--ink-3)]"></i>Nhật ký chạy
+          </div>
+          <span id="logTimestamp" class="badge b-info">Đang kết nối…</span>
+        </div>
+
+        <div id="pipelineProgressBar" class="hidden px-5 py-3 border-b border-[var(--line)] bg-[var(--surface-2)] flex flex-wrap items-center gap-x-3 gap-y-2">
+          <div id="step-script" class="step" data-state="pending"><span class="num">1</span><span>Lời thoại</span></div>
+          <span class="step-sep" aria-hidden="true"></span>
+          <div id="step-voice" class="step" data-state="pending"><span class="num">2</span><span>Giọng đọc</span></div>
+          <span class="step-sep" aria-hidden="true"></span>
+          <div id="step-ai" class="step" data-state="pending"><span class="num">3</span><span>Render AI</span></div>
+          <span class="step-sep" aria-hidden="true"></span>
+          <div id="step-cutaway" class="step" data-state="pending"><span class="num">4</span><span>Dựng và ghép</span></div>
+        </div>
+
+        <div id="terminalLogs" class="log flex-1 px-5 py-4 overflow-y-auto max-h-[calc(100dvh-260px)] min-h-[380px]" role="log" aria-live="polite">
+          <div class="log-empty">Chưa có gì chạy. Điền form bên trái rồi bấm "Tạo video".</div>
+        </div>
+      </section>
+
+      <!-- THƯ VIỆN VIDEO -->
+      <section id="tab-gallery" role="tabpanel" aria-labelledby="tabBtn-gallery" class="hidden flex-1 flex flex-col gap-4">
+        <div class="card px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="opt-icon"><i data-lucide="combine"></i></span>
+            <div class="min-w-0">
+              <div class="text-[14px] font-semibold">Ghép nhiều video</div>
+              <div id="selectedCountText" class="help">Đã chọn 0 video</div>
+            </div>
+          </div>
+          <button type="button" onclick="handleConcatVideos()" id="concatBtn" disabled class="btn btn-primary">
+            <i data-lucide="merge"></i>Ghép thành một video
+          </button>
+        </div>
+        <div id="videoGrid" class="grid grid-cols-1 sm:grid-cols-2 auto-rows-max content-start gap-4 overflow-y-auto max-h-[calc(100dvh-240px)] min-h-[420px] pr-1"></div>
+      </section>
+
+      <!-- GIỌNG ĐỌC -->
+      <section id="tab-voice" role="tabpanel" aria-labelledby="tabBtn-voice" class="hidden flex-1 flex flex-col gap-4">
+        <div class="card p-5 space-y-3">
+          <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 class="text-[15px] font-semibold flex items-center gap-2"><i data-lucide="audio-lines" class="w-4 h-4 text-[var(--primary)]"></i>Tạo file giọng đọc</h3>
+            <span class="help">Văn bản thành MP3</span>
+          </div>
+          <label for="standaloneVoiceText" class="sr-only">Nội dung cần đọc</label>
+          <textarea id="standaloneVoiceText" rows="3" class="field" placeholder="Nội dung cần đọc, ví dụ: Thưởng thức hương trà thảo mộc dịu êm mỗi tối..."></textarea>
+          <div class="flex flex-wrap items-end gap-2">
+            <div class="flex-1 min-w-[180px]">
+              <label for="standaloneVoiceCode" class="lbl">Giọng</label>
+              <select id="standaloneVoiceCode" class="field">
+                <option value="hn_female_ngochuyen_full_48k-fhg">Ngọc Huyền · nữ Hà Nội</option>
+                <option value="hn_male_manhdung_news_48k-fhg">Mạnh Dũng · nam Hà Nội</option>
+                <option value="sg_female_thaotrinh_full_48k-fhg">Thảo Trinh · nữ Sài Gòn</option>
+                <option value="sg_male_minhhoang_full_48k-fhg">Minh Hoàng · nam Sài Gòn</option>
+                <option value="hn_female_maiphuong_vdts_48k-fhg">Mai Phương · nữ Hà Nội</option>
+                <option value="sg_female_tuongvy_call_44k-fhg">Tường Vy · nữ Sài Gòn</option>
+                <option value="hue_male_duyphuong_full_48k-fhg">Duy Phương · nam Huế</option>
+                <option value="hue_female_huonggiang_full_48k-fhg">Hương Giang · nữ Huế</option>
+              </select>
+            </div>
+            <div class="w-44">
+              <label for="standaloneVoiceName" class="lbl">Tên file</label>
+              <input type="text" id="standaloneVoiceName" placeholder="vd: vo_shot1" class="field">
+            </div>
+            <button type="button" onclick="handleCreateStandaloneVoice()" id="createVoiceBtn" class="btn btn-sun">
+              <i data-lucide="volume-2"></i>Tạo MP3
+            </button>
+          </div>
+        </div>
+
+        <div class="card p-5 space-y-3">
+          <h3 class="text-[15px] font-semibold flex items-center gap-2"><i data-lucide="film" class="w-4 h-4 text-[var(--primary)]"></i>Ghép giọng vào video có sẵn</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div>
+              <label for="muxVideoSelect" class="lbl">Video (.mp4)</label>
+              <select id="muxVideoSelect" class="field"></select>
+            </div>
+            <div>
+              <label for="muxAudioSelect" class="lbl">Giọng đọc (.mp3)</label>
+              <select id="muxAudioSelect" class="field"></select>
+            </div>
+            <button type="button" onclick="handleMuxVoiceVideo()" class="btn btn-primary w-full">
+              <i data-lucide="combine"></i>Ghép tiếng
+            </button>
+          </div>
+        </div>
+
+        <div class="card p-5 space-y-3 flex-1">
+          <h3 class="text-[15px] font-semibold">File giọng đọc đã tạo</h3>
+          <div id="audioListContainer" class="space-y-2 max-h-[320px] overflow-y-auto pr-1"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ===================== MODAL XEM VIDEO ===================== -->
+  <div id="videoModal" class="modal" data-state="closed" role="dialog" aria-modal="true" aria-labelledby="modalVideoTitle">
+    <div class="modal-backdrop" onclick="closeVideoModal()"></div>
+    <div class="modal-panel max-w-3xl">
+      <div class="px-5 py-3.5 border-b border-[var(--line)] flex items-center justify-between gap-3">
+        <h3 id="modalVideoTitle" class="text-[15px] font-semibold truncate">Video</h3>
+        <button type="button" onclick="closeVideoModal()" class="btn btn-ghost btn-icon" aria-label="Đóng"><i data-lucide="x"></i></button>
+      </div>
+      <div class="p-4 flex justify-center bg-[#111612]">
+        <video id="modalVideoPlayer" controls autoplay class="max-h-[65dvh] rounded-xl"></video>
+      </div>
+      <div class="px-5 py-3 flex justify-end">
+        <a id="modalDownloadBtn" href="#" download class="btn btn-primary"><i data-lucide="download"></i>Tải video</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL API KEYS ===================== -->
+  <div id="envModal" class="modal" data-state="closed" role="dialog" aria-modal="true" aria-labelledby="envTitle">
+    <div class="modal-backdrop" onclick="closeEnvModal()"></div>
+    <div class="modal-panel max-w-lg">
+      <div class="px-5 py-4 border-b border-[var(--line)] flex items-center justify-between gap-3">
+        <div>
+          <h3 id="envTitle" class="text-[16px] font-semibold">API keys</h3>
+          <p class="help">Lưu vào file .env trên máy. Ô để trống giữ nguyên giá trị cũ.</p>
+        </div>
+        <button type="button" onclick="closeEnvModal()" class="btn btn-ghost btn-icon" aria-label="Đóng"><i data-lucide="x"></i></button>
+      </div>
+      <form onsubmit="handleSaveEnv(event)" class="overflow-y-auto">
+        <div class="p-5 space-y-5">
+          <fieldset class="space-y-3">
+            <legend class="section-title mb-1">Claude</legend>
+            <div>
+              <label for="inputAnthropicKey" class="lbl">ANTHROPIC_API_KEY</label>
+              <input type="password" id="inputAnthropicKey" placeholder="sk-ant-..." class="field" autocomplete="off">
+              <span id="hintAnthropic" class="help block mt-1"></span>
+            </div>
+          </fieldset>
+          <fieldset class="space-y-3">
+            <legend class="section-title mb-1">Higgsfield</legend>
+            <div>
+              <label for="inputHfId" class="lbl">HF_API_KEY_ID</label>
+              <input type="text" id="inputHfId" placeholder="hf_key_id_..." class="field" autocomplete="off">
+              <span id="hintHfId" class="help block mt-1"></span>
+            </div>
+            <div>
+              <label for="inputHfSecret" class="lbl">HF_API_KEY_SECRET</label>
+              <input type="password" id="inputHfSecret" placeholder="hf_secret_..." class="field" autocomplete="off">
+              <span id="hintHfSecret" class="help block mt-1"></span>
+            </div>
+          </fieldset>
+          <fieldset class="space-y-3">
+            <legend class="section-title mb-1">Vbee (giọng đọc)</legend>
+            <div>
+              <label for="inputVbeeAppId" class="lbl">VBEE_APP_ID</label>
+              <input type="text" id="inputVbeeAppId" placeholder="App ID trong trang quản trị Vbee" class="field" autocomplete="off">
+              <span id="hintVbeeAppId" class="help block mt-1"></span>
+            </div>
+            <div>
+              <label for="inputVbeeToken" class="lbl">VBEE_ACCESS_TOKEN</label>
+              <input type="password" id="inputVbeeToken" placeholder="Access token" class="field" autocomplete="off">
+              <span id="hintVbeeToken" class="help block mt-1"></span>
+            </div>
+          </fieldset>
+          <fieldset class="space-y-3">
+            <legend class="section-title mb-1">Pixabay (video và ảnh B-roll)</legend>
+            <div>
+              <label for="inputPixabayKey" class="lbl">PIXABAY_API_KEY</label>
+              <input type="password" id="inputPixabayKey" placeholder="Đăng nhập pixabay.com/api/docs để thấy key" class="field" autocomplete="off">
+              <span id="hintPixabay" class="help block mt-1"></span>
+            </div>
+          </fieldset>
+        </div>
+        <div class="px-5 py-3.5 border-t border-[var(--line)] bg-[var(--surface-2)] flex justify-end gap-2 sticky bottom-0">
+          <button type="button" onclick="closeEnvModal()" class="btn btn-ghost">Đóng</button>
+          <button type="submit" class="btn btn-primary">Lưu vào .env</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== LOGIC ===================== -->
+  <script>
+    let ws = null;
+    let selectedShots = new Set();
+    let refImages = []; // [{ id, kind: 'file'|'url', name, dataUrl, url }]
+
+    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    // ---------- Ảnh tham chiếu ----------
+    function renderRefImagesPreview() {
+      const grid = document.getElementById('refImagesPreview');
+      document.getElementById('refImageCount').textContent = `${refImages.length} ảnh`;
+      if (refImages.length === 0) {
+        grid.classList.add('hidden');
+        grid.innerHTML = '';
+        return;
+      }
+      grid.classList.remove('hidden');
+      grid.innerHTML = refImages.map((item, i) => `
+        <div class="relative rounded-xl overflow-hidden border border-[var(--line)] bg-[var(--sunk)] aspect-square anim-in">
+          <img src="${esc(item.kind === 'file' ? item.dataUrl : item.url)}" alt="${esc(item.name)}" class="w-full h-full object-cover">
+          <span class="absolute bottom-1.5 left-1.5 badge ${i === 0 && currentProductionMode === 'avatar' ? 'b-free' : 'bg-white/90 text-[var(--ink-2)]'}">
+            ${i === 0 && currentProductionMode === 'avatar' ? 'Người dẫn' : (item.kind === 'file' ? 'Ảnh máy' : 'Link')}
+          </span>
+          <button type="button" onclick="removeRefImage('${item.id}')" aria-label="Xoá ảnh ${esc(item.name)}"
+            class="btn btn-icon absolute top-1.5 right-1.5 !min-h-[28px] !w-7 !rounded-full bg-white/95 text-[var(--coral-ink)] shadow">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function addFileAsRefImage(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      if (refImages.length >= 10) { alert("Tối đa 10 ảnh tham chiếu."); return; }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        refImages.push({
+          id: 'ref_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          kind: 'file', name: file.name || 'image.jpg', mediaType: file.type || 'image/jpeg', dataUrl: ev.target.result
+        });
+        renderRefImagesPreview();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleRefFilesSelected(e) {
+      Array.from(e.target.files || []).forEach(addFileAsRefImage);
+      e.target.value = '';
+    }
+
+    function addRefImageUrl() {
+      const input = document.getElementById('refUrlInput');
+      const url = input.value.trim();
+      if (!url) return;
+      if (!/^https?:\/\//i.test(url)) { alert("Link ảnh phải bắt đầu bằng http:// hoặc https://"); return; }
+      if (refImages.length >= 10) { alert("Tối đa 10 ảnh tham chiếu."); return; }
+      refImages.push({ id: 'ref_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), kind: 'url', name: url.split('/').pop() || 'url_image', url });
+      input.value = '';
+      renderRefImagesPreview();
+    }
+
+    function removeRefImage(id) {
+      refImages = refImages.filter(item => item.id !== id);
+      renderRefImagesPreview();
+    }
+
+    // ---------- Chế độ + gợi ý ----------
+    const PROMPT_PRESETS = {
+      tea: "Video quảng cáo 15 giây cho trà thảo mộc Quiet Evening, mở đầu bằng ấm trà thủy tinh trên bàn gỗ khi trời mưa lất phất, nước trà vàng ấm rót vào tách bốc khói nhẹ, cảnh hoa cúc khô nở trong nước, kết thúc là logo thương hiệu thanh lịch và ấm cúng.",
+      app: "Teaser giới thiệu ứng dụng học ngoại ngữ thông minh 10 giây, phong cách trẻ trung năng động, màn hình điện thoại phát sáng với các icon từ vựng 3D bay xung quanh, nhân vật mỉm cười tự tin giao tiếp, tông màu neon hiện đại.",
+      cyber: "Cinematic B-Roll 12 giây thành phố tương lai phong cách Cyberpunk, góc máy drone bay lượn giữa các tòa cao ốc bảng hiệu hologram rực rỡ, mưa đêm phản chiếu ánh đèn neon tím và xanh cyan trên mặt đường.",
+      relax: "Video thư giãn 15 giây cảnh bãi biển lúc hoàng hôn yên bình, sóng vỗ êm đềm vào bờ cát trắng, ánh mặt trời vàng cam phản chiếu mặt biển lấp lánh, một chú mòng biển bay lượn ở góc chân trời.",
+      avatar_intro: "Xin chào các bạn! Tôi là trợ lý AI đồng hành cùng bạn. Hôm nay tôi rất vui được chia sẻ với các bạn về cách tự động hoá toàn bộ quy trình sản xuất nội dung video chỉ với vài câu lệnh đơn giản.",
+      avatar_edu: "Chào mọi người, 3 nguyên tắc quản lý tài chính cá nhân mà ai cũng nên biết: Thứ nhất, luôn trích ít nhất 20% thu nhập để tiết kiệm trước khi chi tiêu. Thứ hai, kiểm soát chi tiêu nhỏ lẻ mỗi ngày. Và thứ ba, luôn đầu tư nâng cao giá trị bản thân.",
+      avatar_review: "Xin chào các bạn! Hôm nay mình sẽ review nhanh sản phẩm mà mình đã trải nghiệm suốt 1 tháng qua. Điểm cộng lớn nhất là thiết kế cực kỳ nhỏ gọn, chất liệu cao cấp và cảm giác sử dụng vô cùng mượt mà."
+    };
+    const QUICK_CHIPS = {
+      cinema: [['tea', 'Trà thảo mộc'], ['app', 'App học ngoại ngữ'], ['cyber', 'Thành phố cyberpunk'], ['relax', 'Hoàng hôn biển']],
+      avatar: [['avatar_intro', 'Giới thiệu bản thân'], ['avatar_edu', 'Bài học tài chính'], ['avatar_review', 'Review sản phẩm']]
+    };
+
+    let currentProductionMode = 'cinema';
+
+    function setCollapse(el, open) {
+      if (!el) return;
+      el.dataset.open = open ? 'true' : 'false';
+      if (open) el.removeAttribute('inert'); else el.setAttribute('inert', '');
+    }
+
+    function renderQuickChips(mode) {
+      document.getElementById('quickPromptContainer').innerHTML =
+        `<span class="help mr-0.5">Thử nhanh:</span>` +
+        QUICK_CHIPS[mode].map(([k, t]) => `<button type="button" class="chip" onclick="setQuickPrompt('${k}')">${t}</button>`).join('');
+    }
+
+    function setProductionMode(mode) {
+      currentProductionMode = mode;
+      const isAvatar = mode === 'avatar';
+      document.getElementById('modeBtn-cinema').setAttribute('aria-pressed', String(!isAvatar));
+      document.getElementById('modeBtn-avatar').setAttribute('aria-pressed', String(isAvatar));
+      setCollapse(document.getElementById('avatarSettingsBox'), isAvatar);
+      document.getElementById('pipeCinema').classList.toggle('hidden', isAvatar);
+      document.getElementById('pipeAvatar').classList.toggle('hidden', !isAvatar);
+
+      const promptInput = document.getElementById('promptInput');
+      const promptLabel = document.getElementById('promptLabel');
+      if (isAvatar) {
+        promptLabel.textContent = 'Chủ đề, hoặc toàn bộ lời người dẫn';
+        promptInput.placeholder = 'Ví dụ: Xin chào các bạn! Hôm nay mình chia sẻ 3 thói quen buổi sáng... (hoặc chỉ ghi chủ đề để Opus tự viết lời)';
+        document.getElementById('enableVoiceCheck').checked = true;
+        toggleVoiceConfig();
+      } else {
+        promptLabel.textContent = 'Ý tưởng hoặc kịch bản';
+        promptInput.placeholder = 'Ví dụ: Video quảng cáo 15 giây cho trà thảo mộc Quiet Evening, mở đầu cảnh bàn trà chiều mưa, kết bằng logo...';
+      }
+      renderQuickChips(mode);
+      renderRefImagesPreview();
+    }
+
+    function setQuickPrompt(key) {
+      if (PROMPT_PRESETS[key]) {
+        const el = document.getElementById('promptInput');
+        el.value = PROMPT_PRESETS[key];
+        el.focus();
+      }
+    }
+
+    function onAvatarModelChange() {
+      const sel = document.getElementById('avatarAiModelSelect').value;
+      const badge = document.getElementById('motionPriceBadge');
+      badge.textContent = sel.includes('kling') ? 'Kling ~$0.25' : sel.includes('seedance') ? 'Seedance ~$0.30' : 'Cinema Studio ~$2.31';
+    }
+
+    function toggleVoiceConfig() {
+      setCollapse(document.getElementById('voiceConfigBox'), document.getElementById('enableVoiceCheck').checked);
+    }
+
+    // ---------- Tabs ----------
+    const TABS = ['terminal', 'gallery', 'voice'];
+    function switchTab(tab) {
+      TABS.forEach(t => {
+        const panel = document.getElementById('tab-' + t);
+        const btn = document.getElementById('tabBtn-' + t);
+        const on = t === tab;
+        btn.setAttribute('aria-selected', String(on));
+        btn.tabIndex = on ? 0 : -1;
+        if (on && panel.classList.contains('hidden')) {
+          panel.classList.remove('hidden', 'anim-in');
+          void panel.offsetWidth;  // chạy lại hiệu ứng hiện
+          panel.classList.add('anim-in');
+        } else if (!on) {
+          panel.classList.add('hidden');
+        }
+      });
+      document.getElementById('tabIndicator').style.transform = `translateX(${TABS.indexOf(tab) * 100}%)`;
+      if (tab === 'gallery') fetchVideos();
+      if (tab === 'voice') { fetchVoicesAndAudios(); fetchVideos(); }
+    }
+
+    // Phím mũi tên trên thanh tab
+    document.addEventListener('keydown', (e) => {
+      const cur = document.activeElement;
+      if (!cur || cur.getAttribute('role') !== 'tab' || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+      const i = TABS.indexOf(cur.id.replace('tabBtn-', ''));
+      const next = TABS[(i + (e.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length];
+      switchTab(next);
+      document.getElementById('tabBtn-' + next).focus();
+      e.preventDefault();
+    });
+
+    // ---------- Log ----------
+    function appendLog(text, cls = "log-base") {
+      const container = document.getElementById('terminalLogs');
+      if (container.children.length === 1 && container.children[0].classList.contains('log-empty')) container.innerHTML = '';
+      const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+      const row = document.createElement('div');
+      row.className = cls;
+      row.textContent = text;
+      container.appendChild(row);
+      if (nearBottom) container.scrollTop = container.scrollHeight;  // đang đọc log cũ thì không kéo xuống
+    }
+
+    function clearLogs() {
+      document.getElementById('terminalLogs').innerHTML = '<div class="log-empty">Đã xoá log.</div>';
+      resetStepProgress();
+    }
+
+    function getLogColor(text) {
+      if (text.includes("❌") || text.includes("Lỗi")) return "log-err";
+      if (text.includes("✅") || text.includes("Hoàn thành") || text.includes("THÀNH CÔNG")) return "log-ok";
+      if (text.includes("🎬") || text.includes("[vòng") || text.includes("BƯỚC")) return "log-step";
+      if (text.includes("⚠️")) return "log-warn";
+      if (text.includes("⚡") || text.includes("🎨") || text.includes("🎙️")) return "log-accent";
+      return "log-base";
+    }
+
+    function resetStepProgress() {
+      ['step-script', 'step-voice', 'step-ai', 'step-cutaway'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.dataset.state = 'pending';
+      });
+    }
+
+    function highlightStep(stepId, state = 'active') {
+      const el = document.getElementById(stepId);
+      if (el) el.dataset.state = state;
+    }
+
+    function parseStepFromLog(text) {
+      document.getElementById('pipelineProgressBar').classList.remove('hidden');
+      if (text.includes("BƯỚC 1") || text.includes("Soạn kịch bản")) {
+        highlightStep('step-script', 'active');
+      } else if (text.includes("BƯỚC 2") || text.includes("Vbee") || text.includes("lồng tiếng") || text.includes("Tạo audio")) {
+        highlightStep('step-script', 'done'); highlightStep('step-voice', 'active');
+      } else if (text.includes("BƯỚC 3") || text.includes("Higgsfield") || text.includes("Sinh chuyển động")) {
+        highlightStep('step-voice', 'done'); highlightStep('step-ai', 'active');
+      } else if (text.includes("BƯỚC 4") || text.includes("Text Effect") || text.includes("xen kẽ") || text.includes("Ghép video") || text.includes("Cắt cảnh")) {
+        highlightStep('step-ai', 'done'); highlightStep('step-cutaway', 'active');
+      } else if (text.includes("Hoàn thành video thành phẩm") || text.includes("XUẤT BẢN THÀNH CÔNG")) {
+        ['step-script', 'step-voice', 'step-ai', 'step-cutaway'].forEach(s => highlightStep(s, 'done'));
+      }
+    }
+
+    let logPollInterval = null;
+    let lastLogCount = 0;
+
+    function startLogPolling() {
+      if (logPollInterval) return;
+      logPollInterval = setInterval(async () => {
+        try {
+          const resp = await fetch('/api/logs');
+          if (!resp.ok) return;
+          const data = await resp.json();
+          if (data.logs && data.logs.length > lastLogCount) {
+            for (let i = lastLogCount; i < data.logs.length; i++) {
+              appendLog(data.logs[i].text, getLogColor(data.logs[i].text));
+              parseStepFromLog(data.logs[i].text);
+            }
+            lastLogCount = data.logs.length;
+          }
+          if (data.status) updateStatus(data.status);
+          if (data.status !== 'running') stopLogPolling();
+        } catch (e) { /* bỏ qua lỗi polling */ }
+      }, 1500);
+    }
+
+    function stopLogPolling() {
+      if (logPollInterval) { clearInterval(logPollInterval); logPollInterval = null; }
+    }
+
+    // ---------- WebSocket ----------
+    function initWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+      const conn = document.getElementById('logTimestamp');
+
+      ws.onopen = () => { conn.textContent = 'Đã kết nối'; conn.className = 'badge b-free'; };
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'init') {
+          if (data.logs && data.logs.length > 0) {
+            document.getElementById('terminalLogs').innerHTML = '';
+            data.logs.forEach(l => { appendLog(l.text, getLogColor(l.text)); parseStepFromLog(l.text); });
+            lastLogCount = data.logs.length;
+          }
+          if (data.status) updateStatus(data.status);
+        } else if (data.type === 'log') {
+          appendLog(data.text, getLogColor(data.text));
+          parseStepFromLog(data.text);
+          lastLogCount++;
+        } else if (data.type === 'status') {
+          updateStatus(data.status);
+        } else if (data.type === 'approval_required') {
+          showApprovalPrompt(data.question);
+        } else if (data.type === 'approval_resolved') {
+          hideApprovalPrompt();
+        } else if (data.type === 'finished') {
+          highlightStep('step-cutaway', 'done');
+          stopLogPolling();
+          fetchVideos();
+          fetchVoicesAndAudios();
+        }
+      };
+      ws.onclose = () => {
+        conn.textContent = 'Mất kết nối, đang thử lại…'; conn.className = 'badge b-warn';
+        setTimeout(initWebSocket, 2000);
+      };
+    }
+
+    function updateStatus(status) {
+      const badge = document.getElementById('statusBadge');
+      const startBtn = document.getElementById('startBtn');
+      const running = status === 'running';
+      badge.dataset.state = running ? 'running' : 'idle';
+      document.getElementById('statusText').textContent = running ? 'Đang tạo video' : 'Sẵn sàng';
+      startBtn.disabled = running;
+      startBtn.dataset.busy = String(running);
+      if (running) document.getElementById('pipelineProgressBar').classList.remove('hidden');
+    }
+
+    function showApprovalPrompt(prompt) {
+      document.getElementById('approvalPromptText').textContent = prompt;
+      document.getElementById('approvalBanner').classList.remove('hidden');
+    }
+    function hideApprovalPrompt() { document.getElementById('approvalBanner').classList.add('hidden'); }
+
+    async function sendApproval(ans) {
+      hideApprovalPrompt();
+      await fetch('/api/approve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answer: ans }) });
+    }
+
+    // ---------- Chạy ----------
+    async function handleStartRun(e) {
+      e.preventDefault();
+      const $ = (id) => document.getElementById(id);
+      const goal = $('promptInput').value.trim();
+      const budget = parseFloat($('budgetInput').value);
+      const aspect_ratio = $('aspectRatioSelect').value;
+      const resolution = $('resSelect').value;
+      const max_attempts = parseInt($('maxAttemptsInput').value);
+      const auto_approve = $('autoApproveCheck').checked;
+      const demo_mode = $('demoModeCheck').checked;
+      const enable_voice = $('enableVoiceCheck').checked;
+      const voice_code = $('voiceCodeSelect').value;
+      const voice_speed = parseFloat($('voiceSpeedSelect').value);
+      const voice_script = $('voiceScriptInput').value.trim();
+      const auto_broll = $('autoBrollCheck').checked;
+      const broll_interval = parseFloat($('brollIntervalSelect').value);
+      const avatar_ai_motion = $('avatarAiMotionCheck').checked;
+      const avatar_ai_model = $('avatarAiModelSelect').value;
+      const prefer_text_effects = $('preferTextEffectsCheck').checked;
+      const speaker_overlays = $('speakerOverlayCheck').checked;
+      const sfx_enabled = $('sfxCheck').checked;
+      const sfx_volume = parseFloat($('sfxVolumeRange').value);
+      const transitions = $('transitionsCheck').checked;
+      const stock_footage = $('stockFootageCheck').checked;
+      const subtitle_mode = $('wordSubtitleCheck').checked ? 'word' : 'phrase';
+
+      const ref_images = refImages.filter(i => i.kind === 'file').map(i => ({ name: i.name, media_type: i.mediaType, data_url: i.dataUrl }));
+      const image_urls = refImages.filter(i => i.kind === 'url').map(i => i.url);
+
+      switchTab('terminal');
+      resetStepProgress();
+      lastLogCount = 0;
+      updateStatus('running');
+      startLogPolling();
+
+      appendLog(
+        `▶️ Bắt đầu: "${goal}"` +
+        (refImages.length ? ` (kèm ${refImages.length} ảnh tham chiếu)` : '') +
+        (enable_voice ? ` [lồng tiếng ${voice_speed}x]` : '') +
+        (currentProductionMode === 'avatar' && avatar_ai_motion ? ` [cử động AI: ${avatar_ai_model.split('/')[1] || avatar_ai_model}]` : '') +
+        (demo_mode ? ' [chạy thử]' : ''),
+        "log-step"
+      );
+
+      try {
+        const resp = await fetch('/api/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            goal, budget, aspect_ratio, resolution, max_attempts, auto_approve, demo_mode,
+            ref_images, image_urls,
+            enable_voice, voice_code, voice_speed, voice_script,
+            production_mode: currentProductionMode,
+            auto_broll, broll_interval, avatar_ai_motion, avatar_ai_model, prefer_text_effects, speaker_overlays,
+            sfx_enabled, sfx_volume, transitions, stock_footage, subtitle_mode
+          })
+        });
+        const res = await resp.json();
+        if (resp.status !== 200) {
+          appendLog(`❌ ${res.error}`, "log-err");
+          updateStatus('idle');
+          alert(res.error);
+        }
+      } catch (err) {
+        appendLog(`❌ Lỗi kết nối: ${err}`, "log-err");
+        updateStatus('idle');
+      }
+    }
+
+    // ---------- Thư viện video ----------
+    async function fetchVideos() {
+      try {
+        const resp = await fetch('/api/videos');
+        const data = await resp.json();
+        const grid = document.getElementById('videoGrid');
+        const videos = data.videos || [];
+        document.getElementById('videoCountBadge').textContent = videos.length;
+        document.getElementById('galleryTabCount').textContent = videos.length;
+
+        const muxVideoSel = document.getElementById('muxVideoSelect');
+        muxVideoSel.innerHTML = videos.length
+          ? videos.map(v => `<option value="${esc(v.name)}">${esc(v.name)} (${v.size_mb} MB)</option>`).join('')
+          : '<option value="">Chưa có video</option>';
+
+        if (videos.length === 0) {
+          grid.innerHTML = `
+            <div class="sm:col-span-2 card py-14 px-6 text-center">
+              <div class="mx-auto w-12 h-12 rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)] grid place-items-center"><i data-lucide="film"></i></div>
+              <p class="mt-3 font-semibold">Chưa có video nào</p>
+              <p class="help mt-1">Video bạn tạo sẽ hiện ở đây.</p>
+            </div>`;
+          lucide.createIcons();
+          return;
+        }
+
+        grid.innerHTML = videos.map((v, i) => `
+          <article class="vcard anim-in" style="animation-delay:${Math.min(i, 8) * 40}ms">
+            <div class="vthumb" role="button" tabindex="0" aria-label="Xem ${esc(v.name)}"
+              onclick="openVideoModal('${esc(v.url)}', '${esc(v.name)}')"
+              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openVideoModal('${esc(v.url)}', '${esc(v.name)}')}">
+              ${v.thumb_url ? `<img src="${esc(v.thumb_url)}" alt="" loading="lazy">` : ''}
+              <span class="play"><i data-lucide="play" class="w-5 h-5"></i></span>
+              <span class="absolute bottom-2 right-2 badge bg-black/65 text-white tabular-nums">${v.size_mb} MB</span>
+            </div>
+            <div class="px-3.5 py-3 flex items-center justify-between gap-2">
+              <label class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer">
+                <input type="checkbox" onchange="toggleSelectShot('${esc(v.name)}')" ${selectedShots.has(v.name) ? 'checked' : ''}
+                  class="w-4 h-4 shrink-0 accent-[var(--primary)] cursor-pointer" aria-label="Chọn để ghép">
+                <span class="truncate text-[13.5px] font-medium" title="${esc(v.name)}">${esc(v.name)}</span>
+              </label>
+              <div class="flex items-center gap-1 shrink-0">
+                <a href="${esc(v.url)}" download class="btn btn-ghost btn-icon !border-transparent" aria-label="Tải ${esc(v.name)}"><i data-lucide="download"></i></a>
+                <button type="button" onclick="handleDeleteVideo('${esc(v.name)}')" class="btn btn-danger-quiet btn-icon" aria-label="Xoá ${esc(v.name)}"><i data-lucide="trash-2"></i></button>
+              </div>
+            </div>
+          </article>
+        `).join('');
+        lucide.createIcons();
+      } catch (err) {
+        console.error("Lỗi tải danh sách video", err);
+      }
+    }
+
+    // ---------- Giọng đọc ----------
+    async function fetchVoicesAndAudios() {
+      try {
+        const resp = await fetch('/api/voices');
+        const data = await resp.json();
+        const audios = data.audios || [];
+        document.getElementById('voiceTabCount').textContent = audios.length;
+
+        document.getElementById('muxAudioSelect').innerHTML = audios.length
+          ? audios.map(a => `<option value="${esc(a.name)}">${esc(a.name)} (${a.size_kb} KB)</option>`).join('')
+          : '<option value="">Chưa có file giọng đọc</option>';
+
+        const listEl = document.getElementById('audioListContainer');
+        if (!audios.length) {
+          listEl.innerHTML = '<p class="help py-8 text-center">Chưa có file nào. Nhập văn bản ở trên để tạo.</p>';
+          return;
+        }
+        listEl.innerHTML = audios.map(a => `
+          <div class="sunk flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3">
+            <div class="min-w-0">
+              <div class="text-[13.5px] font-semibold truncate">${esc(a.name)}</div>
+              <div class="help tabular-nums">${a.size_kb} KB · ${esc(a.mtime)}</div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <audio controls src="${esc(a.url)}" class="h-9 w-full sm:w-56"></audio>
+              <a href="${esc(a.url)}" download class="btn btn-ghost btn-icon shrink-0" aria-label="Tải ${esc(a.name)}"><i data-lucide="download"></i></a>
+            </div>
+          </div>
+        `).join('');
+        lucide.createIcons();
+      } catch (err) {
+        console.error("Lỗi tải danh sách giọng đọc", err);
+      }
+    }
+
+    async function handleCreateStandaloneVoice() {
+      const text = document.getElementById('standaloneVoiceText').value.trim();
+      const voice_code = document.getElementById('standaloneVoiceCode').value;
+      const name = document.getElementById('standaloneVoiceName').value.trim();
+      const demo_mode = document.getElementById('demoModeCheck').checked;
+      if (!text) { alert("Nhập nội dung cần đọc trước đã."); return; }
+
+      const btn = document.getElementById('createVoiceBtn');
+      btn.disabled = true;
+      appendLog(`🎙️ Đang tạo giọng đọc: "${text.slice(0, 50)}..."`, "log-accent");
+      try {
+        const resp = await fetch('/api/voices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, voice_code, name, demo_mode }) });
+        const res = await resp.json();
+        if (resp.status === 200) { fetchVoicesAndAudios(); alert(res.message); }
+        else alert(res.error || "Không tạo được giọng đọc.");
+      } catch (err) {
+        alert("Lỗi kết nối: " + err);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function handleMuxVoiceVideo() {
+      const video_file = document.getElementById('muxVideoSelect').value;
+      const audio_file = document.getElementById('muxAudioSelect').value;
+      if (!video_file || !audio_file) { alert("Chọn một video (.mp4) và một file giọng đọc (.mp3)."); return; }
+      const output_file = prompt("Tên file video sau khi ghép tiếng:", `${video_file.replace('.mp4', '')}_voiced.mp4`);
+      if (!output_file) return;
+      try {
+        const resp = await fetch('/api/voice/mux', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ video_file, audio_file, output_file }) });
+        const res = await resp.json();
+        if (resp.status === 200) { alert(res.message); fetchVideos(); switchTab('gallery'); }
+        else alert(res.error || "Không ghép được tiếng vào video.");
+      } catch (err) {
+        alert("Lỗi kết nối: " + err);
+      }
+    }
+
+    function toggleSelectShot(name) {
+      if (selectedShots.has(name)) selectedShots.delete(name); else selectedShots.add(name);
+      document.getElementById('selectedCountText').textContent = `Đã chọn ${selectedShots.size} video` + (selectedShots.size === 1 ? ' · chọn thêm ít nhất 1' : '');
+      document.getElementById('concatBtn').disabled = selectedShots.size < 2;
+    }
+
+    async function handleConcatVideos() {
+      if (selectedShots.size < 2) return;
+      const shots = Array.from(selectedShots);
+      const outName = prompt("Tên file video ghép:", `final_concat_${Date.now()}.mp4`);
+      if (!outName) return;
+      appendLog(`🎞️ Đang ghép ${shots.length} video bằng FFmpeg...`, "log-step");
+      switchTab('terminal');
+      try {
+        const resp = await fetch('/api/concat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shots, output_name: outName }) });
+        const res = await resp.json();
+        if (resp.status === 200) {
+          appendLog(`✅ ${res.message}`, "log-ok");
+          selectedShots.clear();
+          document.getElementById('selectedCountText').textContent = 'Đã chọn 0 video';
+          document.getElementById('concatBtn').disabled = true;
+          fetchVideos();
+        } else {
+          appendLog(`❌ Lỗi ghép video: ${res.error}`, "log-err");
+          alert(res.error);
+        }
+      } catch (err) {
+        appendLog(`❌ Lỗi kết nối: ${err}`, "log-err");
+      }
+    }
+
+    async function handleDeleteVideo(name) {
+      if (!confirm(`Xoá video ${name}? Không hoàn tác được.`)) return;
+      await fetch(`/api/videos?name=${encodeURIComponent(name)}`, { method: 'DELETE' });
+      selectedShots.delete(name);
+      fetchVideos();
+    }
+
+    // ---------- Modal: mở có chuyển động, đóng nhanh hơn ----------
+    let lastFocus = null;
+    function openModal(id) {
+      const m = document.getElementById(id);
+      lastFocus = document.activeElement;
+      clearTimeout(m._t);
+      m.dataset.state = 'open';
+      const first = m.querySelector('input, button:not([aria-label="Đóng"]), video, a');
+      setTimeout(() => (first || m.querySelector('button')).focus(), 30);
+    }
+    function closeModal(id, after) {
+      const m = document.getElementById(id);
+      if (m.dataset.state !== 'open') return;
+      m.dataset.state = 'closing';
+      const done = () => { m.dataset.state = 'closed'; if (after) after(); if (lastFocus) lastFocus.focus(); };
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      m._t = setTimeout(done, reduce ? 0 : 200);
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (document.getElementById('videoModal').dataset.state === 'open') closeVideoModal();
+      else if (document.getElementById('envModal').dataset.state === 'open') closeEnvModal();
+    });
+
+    function openVideoModal(url, name) {
+      document.getElementById('modalVideoTitle').textContent = name;
+      document.getElementById('modalVideoPlayer').src = url;
+      document.getElementById('modalDownloadBtn').href = url;
+      openModal('videoModal');
+    }
+    function closeVideoModal() {
+      const p = document.getElementById('modalVideoPlayer');
+      p.pause();
+      closeModal('videoModal', () => { p.src = ''; });
+    }
+
+    async function openEnvModal() {
+      const resp = await fetch('/api/env');
+      const data = await resp.json();
+      const set = (id, has, masked) => {
+        const el = document.getElementById(id);
+        el.textContent = has ? `Đã có: ${masked}` : 'Chưa có';
+        el.style.color = has ? 'var(--primary-ink)' : 'var(--coral-ink)';
+      };
+      set('hintAnthropic', data.has_anthropic, data.anthropic_masked);
+      set('hintHfId', data.has_hf_id, data.hf_id_masked);
+      set('hintHfSecret', data.has_hf_secret, data.hf_secret_masked);
+      set('hintVbeeAppId', data.has_vbee_app_id, data.vbee_app_id_masked);
+      set('hintVbeeToken', data.has_vbee_token, data.vbee_token_masked);
+      set('hintPixabay', data.has_pixabay, data.pixabay_masked);
+      openModal('envModal');
+    }
+    function closeEnvModal() { closeModal('envModal'); }
+
+    async function handleSaveEnv(e) {
+      e.preventDefault();
+      const body = {};
+      const pairs = [['inputAnthropicKey', 'ANTHROPIC_API_KEY'], ['inputHfId', 'HF_API_KEY_ID'], ['inputHfSecret', 'HF_API_KEY_SECRET'],
+                     ['inputVbeeAppId', 'VBEE_APP_ID'], ['inputVbeeToken', 'VBEE_ACCESS_TOKEN'], ['inputPixabayKey', 'PIXABAY_API_KEY']];
+      pairs.forEach(([id, key]) => { const v = document.getElementById(id).value.trim(); if (v) body[key] = v; });
+      const resp = await fetch('/api/env', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const res = await resp.json();
+      pairs.forEach(([id]) => { document.getElementById(id).value = ''; });
+      alert(res.message || "Đã lưu.");
+      closeEnvModal();
+    }
+
+    // ---------- Khởi động ----------
+    window.addEventListener('DOMContentLoaded', () => {
+      renderQuickChips('cinema');
+      lucide.createIcons();
+      initWebSocket();
+      fetchVideos();
+      fetchVoicesAndAudios();
+
+      // Dán ảnh (Ctrl+V) vào ô kịch bản
+      document.getElementById('promptInput').addEventListener('paste', (e) => {
+        const items = (e.clipboardData || window.clipboardData).items;
+        if (!items) return;
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) {
+            const file = items[i].getAsFile();
+            if (file) addFileAsRefImage(file);
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

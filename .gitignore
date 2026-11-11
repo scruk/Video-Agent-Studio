@@ -1,0 +1,19 @@
+# Key thật
+.env
+
+# Dữ liệu sinh ra / tải lên
+output/
+uploads/
+
+# Python
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# File sao lưu
+*.bak
+*.bak2
+*.bak3
+
+# Skill cục bộ của trình soạn thảo
+.agents/
